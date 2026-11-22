@@ -621,6 +621,46 @@ func ensureAntigravityGeminiBoundaryUserContentDoc(modelName string, doc *ojson.
 	return changed
 }
 
+var antigravityToolContinuationUserTurnJSON = []byte(`{"role":"user","parts":[{"text":"Review the tool result and proceed."}]}`)
+
+// appendAntigravityToolContinuationUserTurnDoc appends a lightweight user turn
+// AFTER reasoning replay capture when an OpenAI-translated Gemini request ends
+// with a functionResponse turn. Prevents Gemini 3.8 Flash from collapsing into
+// 0-thinking premature stop on long tool chains while preserving prompt cache
+// prefix and reasoning replay KV indices.
+func appendAntigravityToolContinuationUserTurnDoc(modelName string, from sdktranslator.Format, doc *ojson.Doc) bool {
+	if doc == nil || strings.Contains(strings.ToLower(modelName), "claude") {
+		return false
+	}
+	if strings.ToLower(strings.TrimSpace(from.String())) != "openai" {
+		return false
+	}
+	contents := doc.Get("request.contents")
+	if !contents.IsArray() {
+		return false
+	}
+	arr := contents.Array()
+	if len(arr) == 0 {
+		return false
+	}
+	last := arr[len(arr)-1]
+	parts := last.Get("parts")
+	if !parts.IsArray() {
+		return false
+	}
+	hasFR := false
+	for _, p := range parts.Array() {
+		if p.Get("functionResponse").Exists() {
+			hasFR = true
+			break
+		}
+	}
+	if !hasFR {
+		return false
+	}
+	return doc.SetRawBytes("request.contents.-1", antigravityToolContinuationUserTurnJSON) == nil
+}
+
 type antigravityContentEdit struct {
 	index       int64
 	path        string

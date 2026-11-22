@@ -1613,3 +1613,80 @@ func TestAntigravitySessionIDDistributionIncludesPositiveAndNegative(t *testing.
 		}
 	})
 }
+
+func TestAntigravityBuildRequestCascadeRequestIDAndLabels(t *testing.T) {
+	t.Parallel()
+
+	executor := &AntigravityExecutor{}
+	auth := &cliproxyauth.Auth{Metadata: map[string]any{"project_id": "test-project"}}
+	payload := []byte(`{"request":{"contents":[{"role":"user","parts":[{"text":"first turn"}]},{"role":"model","parts":[{"text":"response 1"}]},{"role":"user","parts":[{"text":"second turn"}]}]}}`)
+	req, err := executor.buildRequest(context.Background(), auth, "test-token", "gemini-3.8-flash-high", payload, false, "", "https://example.com")
+	if err != nil {
+		t.Fatalf("buildRequest failed: %v", err)
+	}
+
+	body := requestBody(t, req)
+	reqID, ok := body["requestId"].(string)
+	if !ok || !strings.HasPrefix(reqID, "agent/") {
+		t.Fatalf("requestId = %v, want agent/<cascade_id>/<ts>/<trajectory_id>/<step>", body["requestId"])
+	}
+	parts := strings.Split(reqID, "/")
+	if len(parts) != 5 {
+		t.Fatalf("requestId parts = %v, want 5 segments", parts)
+	}
+	if parts[4] != "3" {
+		t.Fatalf("step index = %q, want 3", parts[4])
+	}
+
+	requestMap, ok := body["request"].(map[string]any)
+	if !ok {
+		t.Fatalf("request missing: %v", body)
+	}
+	labels, ok := requestMap["labels"].(map[string]any)
+	if !ok {
+		t.Fatalf("request.labels missing: %v", requestMap)
+	}
+	if labels["cascade_id"] != parts[1] {
+		t.Fatalf("labels.cascade_id = %v, want %s", labels["cascade_id"], parts[1])
+	}
+	if labels["trajectory_id"] != parts[3] {
+		t.Fatalf("labels.trajectory_id = %v, want %s", labels["trajectory_id"], parts[3])
+	}
+	if labels["last_step_index"] != "2" {
+		t.Fatalf("labels.last_step_index = %v, want 2", labels["last_step_index"])
+	}
+	if labels["model_enum"] != "MODEL_PLACEHOLDER_M318" {
+		t.Fatalf("labels.model_enum = %v, want MODEL_PLACEHOLDER_M318", labels["model_enum"])
+	}
+	if labels["used_claude"] != "false" {
+		t.Fatalf("labels.used_claude = %v, want false", labels["used_claude"])
+	}
+
+	if req.ContentLength <= 0 {
+		t.Fatalf("req.ContentLength = %d, want > 0", req.ContentLength)
+	}
+
+	// Verify model telemetry mapping for Gemini 4 Argon and Claude
+	argonReq, err := executor.buildRequest(context.Background(), auth, "test-token", "gemini-4-argon", payload, false, "", "https://example.com")
+	if err != nil {
+		t.Fatalf("buildRequest argon failed: %v", err)
+	}
+	argonBody := requestBody(t, argonReq)
+	argonLabels := argonBody["request"].(map[string]any)["labels"].(map[string]any)
+	if argonLabels["model_enum"] != "MODEL_PLACEHOLDER_M417" {
+		t.Fatalf("argon model_enum = %v, want MODEL_PLACEHOLDER_M417", argonLabels["model_enum"])
+	}
+
+	claudeReq, err := executor.buildRequest(context.Background(), auth, "test-token", "claude-sonnet-4-6", payload, false, "", "https://example.com")
+	if err != nil {
+		t.Fatalf("buildRequest claude failed: %v", err)
+	}
+	claudeBody := requestBody(t, claudeReq)
+	claudeLabels := claudeBody["request"].(map[string]any)["labels"].(map[string]any)
+	if claudeLabels["model_enum"] != "MODEL_PLACEHOLDER_M35" {
+		t.Fatalf("claude model_enum = %v, want MODEL_PLACEHOLDER_M35", claudeLabels["model_enum"])
+	}
+	if claudeLabels["used_claude"] != "true" || claudeLabels["used_non_gemini_model"] != "true" {
+		t.Fatalf("claude telemetry flags invalid: %v", claudeLabels)
+	}
+}

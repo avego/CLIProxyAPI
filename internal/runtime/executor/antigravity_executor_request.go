@@ -106,6 +106,7 @@ func (e *AntigravityExecutor) buildRequestDoc(ctx context.Context, auth *cliprox
 	if errReq != nil {
 		return nil, nil, errReq
 	}
+	httpReq.ContentLength = int64(len(finalPayload))
 	// Deliberately no httpReq.Close: the native Antigravity client omits the
 	// Connection header and keeps its HTTP/1.1 connections alive, so forcing
 	// "Connection: close" would both deviate from that fingerprint and defeat the
@@ -813,7 +814,6 @@ func geminiToAntigravityDocForAuth(doc *ojson.Doc, modelName string, projectID s
 			_ = doc.Set("request.sessionId", scopeIncomingAntigravitySessionID(authID, incomingSessionID, derivedSessionID))
 		}
 	default:
-		_ = doc.Set("requestId", generateRequestID())
 		var sessionID string
 		if authID != "" {
 			if derivedSessionID != "" || incomingSessionID != "" {
@@ -829,6 +829,42 @@ func geminiToAntigravityDocForAuth(doc *ojson.Doc, modelName string, projectID s
 			sessionID = generateStableSessionIDDocForAuth(doc, authID)
 		}
 		_ = doc.Set("request.sessionId", sessionID)
+
+		cascadeUUID := uuid.NewMD5(uuid.NameSpaceDNS, []byte("cascade:"+sessionID))
+		cascadeID := cascadeUUID.String()
+		trajectoryUUID := uuid.NewMD5(uuid.NameSpaceDNS, []byte("trajectory:"+sessionID))
+		trajectoryID := trajectoryUUID.String()
+
+		contents := doc.Get("request.contents")
+		stepCount := 0
+		if contents.IsArray() {
+			stepCount = len(contents.Array())
+		}
+		lastStep := stepCount
+		if lastStep > 0 {
+			lastStep = stepCount - 1
+		}
+		currentStep := lastStep + 1
+		lastStepStr := strconv.Itoa(lastStep)
+
+		timestamp := time.Now().UnixMilli()
+		cascadeReqID := fmt.Sprintf("agent/%s/%d/%s/%d", cascadeID, timestamp, trajectoryID, currentStep)
+		_ = doc.Set("requestId", cascadeReqID)
+
+		telemetry := resolveAntigravityModelTelemetry(modelName)
+		labelsReqID := fmt.Sprintf("%s-%d", trajectoryID, currentStep)
+
+		if !doc.Get("request.labels").Exists() {
+			_ = doc.Set("request.labels.cascade_id", cascadeID)
+			_ = doc.Set("request.labels.root_cascade_id", cascadeID)
+			_ = doc.Set("request.labels.trajectory_id", trajectoryID)
+			_ = doc.Set("request.labels.last_step_index", lastStepStr)
+			_ = doc.Set("request.labels.request_id", labelsReqID)
+			_ = doc.Set("request.labels.model_enum", telemetry.modelEnum)
+			_ = doc.Set("request.labels.used_claude", strconv.FormatBool(telemetry.usedClaude))
+			_ = doc.Set("request.labels.used_claude_conservative", "false")
+			_ = doc.Set("request.labels.used_non_gemini_model", strconv.FormatBool(telemetry.usedNonGemini))
+		}
 	}
 
 	_ = doc.Delete("request.safetySettings")
@@ -926,4 +962,173 @@ func generateStableSessionIDFromContentsForAuth(contents ojson.Result, authID st
 		return stableID
 	}
 	return generateSessionID()
+}
+
+type antigravityModelTelemetry struct {
+	modelEnum     string
+	usedClaude    bool
+	usedNonGemini bool
+}
+
+// resolveAntigravityModelTelemetry maps model IDs to their exact internal
+// Antigravity platform enum (MODEL_PLACEHOLDER_M...) and telemetry labels.
+func resolveAntigravityModelTelemetry(modelName string) antigravityModelTelemetry {
+	clean := strings.ToLower(strings.TrimSpace(modelName))
+	clean = strings.TrimPrefix(clean, "models/")
+	clean = strings.TrimPrefix(clean, "antigravity-")
+	clean = strings.TrimPrefix(clean, "gcp/")
+
+	// Claude (Anthropic)
+	if strings.Contains(clean, "claude") {
+		enum := "MODEL_PLACEHOLDER_M35" // default claude-sonnet-4-6
+		switch {
+		case strings.Contains(clean, "opus-4-6"):
+			enum = "MODEL_PLACEHOLDER_M26"
+		case strings.Contains(clean, "sonnet-4-6"):
+			enum = "MODEL_PLACEHOLDER_M35"
+		case strings.Contains(clean, "opus-5-5") || strings.Contains(clean, "opus-5.5"):
+			switch {
+			case strings.Contains(clean, "low"):
+				enum = "MODEL_PLACEHOLDER_M400"
+			case strings.Contains(clean, "medium"):
+				enum = "MODEL_PLACEHOLDER_M401"
+			default:
+				enum = "MODEL_PLACEHOLDER_M402"
+			}
+		case strings.Contains(clean, "sonnet-5-5") || strings.Contains(clean, "sonnet-5.5"):
+			switch {
+			case strings.Contains(clean, "low"):
+				enum = "MODEL_PLACEHOLDER_M403"
+			case strings.Contains(clean, "medium"):
+				enum = "MODEL_PLACEHOLDER_M404"
+			default:
+				enum = "MODEL_PLACEHOLDER_M405"
+			}
+		}
+		return antigravityModelTelemetry{
+			modelEnum:     enum,
+			usedClaude:    true,
+			usedNonGemini: true,
+		}
+	}
+
+	// GPT-OSS (OpenAI)
+	if strings.Contains(clean, "gpt-oss") {
+		return antigravityModelTelemetry{
+			modelEnum:     "MODEL_OPENAI_GPT_OSS_120B_MEDIUM",
+			usedClaude:    false,
+			usedNonGemini: true,
+		}
+	}
+
+	// Gemini 4 Argon
+	if strings.Contains(clean, "argon") {
+		switch {
+		case strings.Contains(clean, "low"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M419"}
+		case strings.Contains(clean, "medium"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M418"}
+		default:
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M417"} // high / default
+		}
+	}
+
+	// Gemini 4 Hydrogen
+	if strings.Contains(clean, "hydrogen") {
+		switch {
+		case strings.Contains(clean, "xhigh"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M528"}
+		case strings.Contains(clean, "low"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M527"}
+		case strings.Contains(clean, "medium"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M526"}
+		default:
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M525"} // high / default
+		}
+	}
+
+	// Gemini 4 Carbon
+	if strings.Contains(clean, "carbon") {
+		switch {
+		case strings.Contains(clean, "high"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M427"}
+		case strings.Contains(clean, "medium"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M437"}
+		case strings.Contains(clean, "low"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M438"}
+		default:
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M670"}
+		}
+	}
+
+	// Orchestrator
+	if strings.Contains(clean, "orchestrator") {
+		return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M668"}
+	}
+
+	// Gemini 3.8 Flash
+	if strings.Contains(clean, "3.8") || strings.Contains(clean, "3-8") {
+		switch {
+		case strings.Contains(clean, "low"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M320"}
+		case strings.Contains(clean, "medium"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M319"}
+		default:
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M318"} // high / default
+		}
+	}
+
+	// Gemini 3.7 Flash
+	if strings.Contains(clean, "3.7") || strings.Contains(clean, "3-7") {
+		switch {
+		case strings.Contains(clean, "low"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M300"}
+		case strings.Contains(clean, "medium"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M299"}
+		default:
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M298"} // high / default
+		}
+	}
+
+	// Gemini 3.6 Flash
+	if strings.Contains(clean, "3.6") || strings.Contains(clean, "3-6") {
+		switch {
+		case strings.Contains(clean, "low"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M73"}
+		case strings.Contains(clean, "medium"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M72"}
+		default:
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M71"}
+		}
+	}
+
+	// Gemini 3.5 Flash
+	if strings.Contains(clean, "3.5") || strings.Contains(clean, "3-5") {
+		switch {
+		case strings.Contains(clean, "low"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M187"}
+		case strings.Contains(clean, "medium"):
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M20"}
+		default:
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M84"}
+		}
+	}
+
+	// Gemini 3.1 Pro / Pro agent
+	if strings.Contains(clean, "pro") {
+		if strings.Contains(clean, "low") {
+			return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M36"}
+		}
+		return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M16"}
+	}
+
+	// Gemini 3 Flash
+	if strings.Contains(clean, "3-flash") || clean == "gemini-flash" {
+		return antigravityModelTelemetry{modelEnum: "MODEL_PLACEHOLDER_M18"}
+	}
+
+	// Default fallback to M318 (Gemini 3.8 Flash High)
+	return antigravityModelTelemetry{
+		modelEnum: "MODEL_PLACEHOLDER_M318",
+	}
 }
