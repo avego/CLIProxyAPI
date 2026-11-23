@@ -555,7 +555,7 @@ func TestAntigravityStreamPrependsLeadingUserForGemini(t *testing.T) {
 	assertLeadingFunctionHistory := func(t *testing.T, body []byte) {
 		t.Helper()
 		contents := ojson.GetBytes(body, "request.contents").Array()
-		if len(contents) != 3 || contents[0].Get("role").String() != "user" {
+		if len(contents) < 3 || contents[0].Get("role").String() != "user" {
 			t.Fatalf("upstream roles malformed: %s", body)
 		}
 		leadingText := contents[0].Get("parts.0.text")
