@@ -1,0 +1,215 @@
+{
+  "core_label": "stable_core",
+  "model": "gemini-3.8-flash-high",
+  "stream": true,
+  "timestamp": "2026-11-24T05:03:10Z",
+  "input_payload": {
+    "model": "gemini-3.8-flash-high",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Inspect file config.json and list all database connection settings."
+      },
+      {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_db_inspect_01",
+            "type": "function",
+            "function": {
+              "name": "read_project_file",
+              "arguments": "{\"path\": \"config.json\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_db_inspect_01",
+        "name": "read_project_file",
+        "content": "{\"database\": {\"host\": \"localhost\", \"port\": 5432, \"name\": \"app_prod\", \"pool_size\": 20}}"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "read_project_file",
+          "description": "Read file contents from disk",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      }
+    ],
+    "stream": true
+  },
+  "client_metrics": {
+    "elapsed_sec": 4.67,
+    "total_chunks": 6,
+    "thought_chunks": 1,
+    "content_chunks": 4,
+    "reasoning_length_chars": 246,
+    "content_length_chars": 164,
+    "reasoning_sample": "The file `config.json` was read, revealing the database connection settings: host \"localhost\", port 5432, database name \"app\\_prod\", and pool size 20. The response explicitly contains the requested information. The tool has performed as expected.",
+    "content_sample": "Based on `config.json`, here are the database connection settings:\n\n* **Host:** `localhost`\n* **Port:** `5432`\n* **Database Name:** `app_prod`\n* **Pool Size:** `20`"
+  },
+  "upstream_wire_flow": {
+    "flow_id": "f1166f5e-1c95-4f82-a229-ddc9ebfafa48",
+    "host": "daily-cloudcode-pa.googleapis.com",
+    "path": "/v1internal:streamGenerateContent?alt=sse",
+    "status_code": 200,
+    "request_json": {
+      "project": "aico***",
+      "request": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Inspect file config.json and list all database connection settings."
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "functionCall": {
+                  "id": "call_db_inspect_01",
+                  "name": "read_project_file",
+                  "args": {
+                    "path": "config.json"
+                  }
+                },
+                "thoughtSignature": "skip_thought_signature_validator"
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "functionResponse": {
+                  "id": "call_db_inspect_01",
+                  "name": "read_project_file",
+                  "response": {
+                    "result": "{\"database\": {\"host\": \"localhost\", \"port\": 5432, \"name\": \"app_prod\", \"pool_size\": 20}}"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Review the tool result and proceed."
+              }
+            ]
+          }
+        ],
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "read_project_file",
+                "description": "Read file contents from disk",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "sessionId": "-3503101986782200747",
+        "labels": {
+          "cascade_id": "90500eb3-32bc-3e50-98f9-d4d9795b7837",
+          "root_cascade_id": "90500eb3-32bc-3e50-98f9-d4d9795b7837",
+          "trajectory_id": "9631c2a3-754b-3027-86ef-a3ed39c31d22",
+          "last_step_index": "3",
+          "request_id": "9631c2a3-754b-3027-86ef-a3ed39c31d22-4",
+          "model_enum": "MODEL_PLACEHOLDER_M318",
+          "used_claude": "false",
+          "used_claude_conservative": "false",
+          "used_non_gemini_model": "false"
+        },
+        "generationConfig": {
+          "thinkingConfig": {
+            "includeThoughts": true,
+            "thinkingLevel": "HIGH"
+          },
+          "maxOutputTokens": 65536
+        }
+      },
+      "model": "gemini-3.8-flash-high",
+      "userAgent": "antigravity",
+      "requestType": "agent",
+      "requestId": "agent/90500eb3-32bc-3e50-98f9-d4d9795b7837/1795496586022/9631c2a3-754b-3027-86ef-a3ed39c31d22/4"
+    },
+    "response_sse_raw": "data: {\"response\": {\"candidates\": [{\"content\": {\"role\": \"model\",\"parts\": [{\"thought\": true,\"text\": \"The file `config.json` was read, revealing the database connection settings: host \\\"localhost\\\", port 5432, database name \\\"app\\\\_prod\\\", and pool size 20. The response explicitly contains the requested information. The tool has performed as expected.\\n\\n\\n\"}]}}],\"usageMetadata\": {\"promptTokenCount\": 135,\"totalTokenCount\": 326,\"thoughtsTokenCount\": 191},\"modelVersion\": \"gemini-3.8-flash-n\",\"responseId\": \"MBoFa93CEpankdUPk8yzmQ0\"},\"traceId\": \"6b989935526d0226\",\"metadata\": {}}\r\n\r\ndata: {\"response\": {\"candidates\": [{\"content\": {\"role\": \"model\",\"parts\": [{\"text\": \"Based\"}]}}],\"usageMetadata\": {\"promptTokenCount\": 135,\"candidatesTokenCount\": 1,\"totalTokenCount\": 402,\"thoughtsTokenCount\": 266},\"modelVersion\": \"gemini-3.8-flash-n\",\"responseId\": \"MBoFa93CEpankdUPk8yzmQ0\"},\"traceId\": \"6b989935526d0226\",\"metadata\": {}}\r\n\r\ndata: {\"response\": {\"candidates\": [{\"content\": {\"role\": \"model\",\"parts\": [{\"text\": \" on `config.json`, here are the database connection settings:\\n\\n* **Host:** `localhost`\\n* **Port\"}]}}],\"usageMetadata\": {\"promptTokenCount\": 135,\"candidatesTokenCount\": 26,\"totalTokenCount\": 427,\"thoughtsTokenCount\": 266},\"modelVersion\": \"gemini-3.8-flash-n\",\"responseId\": \"MBoFa93CEpankdUPk8yzmQ0\"},\"traceId\": \"6b989935526d0226\",\"metadata\": {}}\r\n\r\ndata: {\"response\": {\"candidates\": [{\"content\": {\"role\": \"model\",\"parts\": [{\"text\": \":** `5432`\\n* **Database Name:** `app_prod`\\n* **Pool Size:** \"}]}}],\"usageMetadata\": {\"promptTokenCount\": 135,\"candidatesTokenCount\": 50,\"totalTokenCount\": 451,\"thoughtsTokenCount\": 266},\"modelVersion\": \"gemini-3.8-flash-n\",\"responseId\": \"MBoFa93CEpankdUPk8yzmQ0\"},\"traceId\": \"6b989935526d0226\",\"metadata\": {}}\r\n\r\ndata: {\"response\": {\"candidates\": [{\"content\": {\"role\": \"model\",\"parts\": [{\"text\": \"`20`\"}]}}],\"usageMetadata\": {\"promptTokenCount\": 135,\"candidatesTokenCount\": 54,\"totalTokenCount\": 455,\"thoughtsTokenCount\": 266},\"modelVersion\": \"gemini-3.8-flash-n\",\"responseId\": \"MBoFa93CEpankdUPk8yzmQ0\"},\"traceId\": \"6b989935526d0226\",\"metadata\": {}}\r\n\r\ndata: {\"response\": {\"candidates\": [{\"content\": {\"role\": \"model\",\"parts\": [{\"thoughtSignature\": \"Eu0JCuoJAWkUfRNzJYpQ9tGWL2g5ncg0Y8SzbToODtgoAEt1rHxuQ/Lwkb6WH1W8yVteCvG+pOVXhec6DHLM/1lsNOAoVPXqlGvdglG9sicrhABvi6+Gy8R8u1jQ4z9a9OTwpXHHMCUL/Fe4Vax7p540G6FRoMmrvdgUiW4p6WdSs9Nuud+ECaAKKMIcqndPotm1Qn0rh1SamZEW7LSZh/rRZd0xfzkDgLDUQymdhg6t7ajMNmC5wf7pGo4piILE1wpYcj3tXFFY15rDnSxDchuK2Tz8pPYF2GG7w9s8Xy0cQ84+dal177ZVFTCIH283CmezOuDmQeq+gJxF/PDqKZ8x9RTWNCOjc304ExJVdu/rXk2uhyC74/IoKb4g6dOiWhQYUjNu1INYEv5SCwKGbTjsYeiO1I5363IPGjxaDKjr9IweWTs2o/swXSkDQ8ybeUNmp5OwkbrZTThLPn8lVZW37hWWQ6rc+VBTN0fK2AY7gOO2yYjPhayuC40UaxUouiepof9mV6wyy+SszTzXLaw+7chUs3gPHef9oG3ltgHyGk1isSxoPugxMcSPYIMrs1e56/IR4OdxmUOMQdYHYMCBoTV4nQqP9VJ0Anp13JHP2Iu0R9yxUbyI6vUXFetY9SPy08AyDgLQx+qYwAtUvQGL16/xqkv/ZzWXZjZO2ZozcYy/+PFO3btPcMKdgRG5/wBALH30Gx8ZcFzJ+xZMKsvRInXpDy8chwlQL6ioFws5twbgzh1LpIJLDvZJ43YBATBk5VoQMUeDm+30IRxJSEXRXnvoWxYHsbWCIwrW92A260j+tpIJMbzg6HnAikPWRY3dCpJPPwLxCogc4fEzeM/WbG3EcJzH5U2P3pLHX4bHGzqQ7H+Paucx+3Kvy0hXfnMW91ZLx3QtA53xfdzSxgdvS59d66UYp3OYWwAUsHfSTRwHzCPnfk+a4eTZutsr+ufapPLRDjFEZeQ1uc4SNXw9S6h+gi9FiHTrtTRZsz4LwStaZN/yUVDn58xyR8RPqOEE5XlZRsS8P+p8yl2etwLQ7qppUTXtgtDkq33LS6x1c6y/pGOT0xFNylyuGfei5T8EjaO9n/jBCibG3QRjW/BTQKqdBExO705No3R45olakOVOTPlu5QsdLmJup2Ki1Luxbfnr9DZkzX4H+RVtRfweQg4KZIvv0iQbjkAkGyKmw+8p6dBpm1QlOY6eNRUkpVkFMMDnzbPfaBy9BmORex5vmM6Z/2sh0E+r39GXxl/wWl/J1ynQsudw0hd8LzcWTYnnBlY6FYYrr/Jvokuya0DIkhIv7P+02OtXV4qm8QRCL+7esNk7O+dZNRTji8vihNkWH1COqUVZ9kx9RS6ZkXfifZ2Ue88vCRAC5efIK22KE5fhcdutl7brQIdQo0S21fuFg8kJ3wdpT/5ZlgTME6DoSG3KngVIjru8xaO41juyWk80tkWq+DYXjSmOjkeouT0u1+TvMUbZkWtPDBcNY8YWHO/yo4JG8u0op39o2dvsL/TDskWVZnR4KY03OK2uduKBeUsPUAEMXJmj19xTP4bYFPH80yjEeTONoUMsB7PDU9kYYWQLS14USszwtKtm5cy8kCCbmV7fcLJy1ha8G9kzsBHddSezB9NEu6I6YzQOkWUoaGKiXfwkzEUvIAbYGRcy/otwbLn5TZ0H/sA1bg==\",\"text\": \"\"}]},\"finishReason\": \"STOP\"}],\"usageMetadata\": {\"promptTokenCount\": 135,\"candidatesTokenCount\": 54,\"totalTokenCount\": 455,\"thoughtsTokenCount\": 266},\"modelVersion\": \"gemini-3.8-flash-n\",\"responseId\": \"MBoFa93CEpankdUPk8yzmQ0\"},\"traceId\": \"6b989935526d0226\",\"metadata\": {}}\r\n\r\n",
+    "response_parts_analysis": [
+      {
+        "keys": [
+          "thought",
+          "text"
+        ],
+        "thought": true,
+        "text_len": 249
+      },
+      {
+        "keys": [
+          "text"
+        ],
+        "thought": false,
+        "text_len": 5
+      },
+      {
+        "keys": [
+          "text"
+        ],
+        "thought": false,
+        "text_len": 95
+      },
+      {
+        "keys": [
+          "text"
+        ],
+        "thought": false,
+        "text_len": 60
+      },
+      {
+        "keys": [
+          "text"
+        ],
+        "thought": false,
+        "text_len": 4
+      },
+      {
+        "keys": [
+          "thoughtSignature",
+          "text"
+        ],
+        "thought": false,
+        "text_len": 0
+      }
+    ]
+  }
+}

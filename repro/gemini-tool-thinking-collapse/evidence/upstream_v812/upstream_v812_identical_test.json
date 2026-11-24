@@ -1,0 +1,192 @@
+{
+  "core_label": "upstream_v812",
+  "model": "gemini-3.8-flash-high",
+  "stream": true,
+  "timestamp": "2026-11-24T05:02:17Z",
+  "input_payload": {
+    "model": "gemini-3.8-flash-high",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Inspect file config.json and list all database connection settings."
+      },
+      {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_db_inspect_01",
+            "type": "function",
+            "function": {
+              "name": "read_project_file",
+              "arguments": "{\"path\": \"config.json\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_db_inspect_01",
+        "name": "read_project_file",
+        "content": "{\"database\": {\"host\": \"localhost\", \"port\": 5432, \"name\": \"app_prod\", \"pool_size\": 20}}"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "read_project_file",
+          "description": "Read file contents from disk",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      }
+    ],
+    "stream": true
+  },
+  "client_metrics": {
+    "elapsed_sec": 4.06,
+    "total_chunks": 4,
+    "thought_chunks": 0,
+    "content_chunks": 3,
+    "reasoning_length_chars": 0,
+    "content_length_chars": 196,
+    "reasoning_sample": "",
+    "content_sample": "The `config.json` file contains the following database connection settings:\n\n* **Host:** `localhost`\n* **Port:** `5432`\n* **Database Name (`name`):** `app_prod`\n* **Pool Size (`pool_size`):** `20`"
+  },
+  "upstream_wire_flow": {
+    "flow_id": "ebd2d112-99d8-434a-967f-8dd74a63c5ed",
+    "host": "daily-cloudcode-pa.googleapis.com",
+    "path": "/v1internal:streamGenerateContent?alt=sse",
+    "status_code": 200,
+    "request_json": {
+      "project": "aico***",
+      "requestId": "agent/e3277c3d-4e6e-4303-bf1e-b02590edd815/1795496533547/1ba50e6b-2cab-4d7a-ba3e-7cf87980646d/3",
+      "request": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Inspect file config.json and list all database connection settings."
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "functionCall": {
+                  "id": "call_db_inspect_01",
+                  "name": "read_project_file",
+                  "args": {
+                    "path": "config.json"
+                  }
+                },
+                "thoughtSignature": "skip_thought_signature_validator"
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "functionResponse": {
+                  "id": "call_db_inspect_01",
+                  "name": "read_project_file",
+                  "response": {
+                    "result": "{\"database\": {\"host\": \"localhost\", \"port\": 5432, \"name\": \"app_prod\", \"pool_size\": 20}}"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "read_project_file",
+                "description": "Read file contents from disk",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "labels": {
+          "cascade_id": "e3277c3d-4e6e-4303-bf1e-b02590edd815",
+          "last_step_index": "2",
+          "model_enum": "MODEL_PLACEHOLDER_M318",
+          "request_id": "1ba50e6b-2cab-4d7a-ba3e-7cf87980646d-1",
+          "root_cascade_id": "e3277c3d-4e6e-4303-bf1e-b02590edd815",
+          "trajectory_id": "1ba50e6b-2cab-4d7a-ba3e-7cf87980646d",
+          "used_claude": "false",
+          "used_claude_conservative": "false",
+          "used_non_gemini_model": "false"
+        },
+        "generationConfig": {
+          "maxOutputTokens": 65536,
+          "thinkingConfig": {
+            "includeThoughts": true,
+            "thinkingLevel": "HIGH"
+          }
+        },
+        "sessionId": "-3503101986782200747"
+      },
+      "model": "gemini-3.8-flash-high",
+      "userAgent": "antigravity",
+      "requestType": "agent"
+    },
+    "response_sse_raw": "data: {\"response\": {\"candidates\": [{\"content\": {\"role\": \"model\",\"parts\": [{\"text\": \"The `config.json` file contains the following database connection settings:\\n\\n* **Host:** `localhost`\\n*\"}]}}],\"usageMetadata\": {\"promptTokenCount\": 127,\"candidatesTokenCount\": 24,\"totalTokenCount\": 271,\"thoughtsTokenCount\": 120},\"modelVersion\": \"gemini-3.8-flash-n\",\"responseId\": \"-xkFa6DiMa7skdUPq-PHkQ8\"},\"traceId\": \"e4f6205c114a3810\",\"metadata\": {}}\r\n\r\ndata: {\"response\": {\"candidates\": [{\"content\": {\"role\": \"model\",\"parts\": [{\"text\": \" **Port:** `5432`\\n* **Database Name (`name`):** `app_prod`\\n* **\"}]}}],\"usageMetadata\": {\"promptTokenCount\": 127,\"candidatesTokenCount\": 51,\"totalTokenCount\": 298,\"thoughtsTokenCount\": 120},\"modelVersion\": \"gemini-3.8-flash-n\",\"responseId\": \"-xkFa6DiMa7skdUPq-PHkQ8\"},\"traceId\": \"e4f6205c114a3810\",\"metadata\": {}}\r\n\r\ndata: {\"response\": {\"candidates\": [{\"content\": {\"role\": \"model\",\"parts\": [{\"text\": \"Pool Size (`pool_size`):** `20`\"}]}}],\"usageMetadata\": {\"promptTokenCount\": 127,\"candidatesTokenCount\": 64,\"totalTokenCount\": 311,\"thoughtsTokenCount\": 120},\"modelVersion\": \"gemini-3.8-flash-n\",\"responseId\": \"-xkFa6DiMa7skdUPq-PHkQ8\"},\"traceId\": \"e4f6205c114a3810\",\"metadata\": {}}\r\n\r\ndata: {\"response\": {\"candidates\": [{\"content\": {\"role\": \"model\",\"parts\": [{\"thoughtSignature\": \"EtUECtIEAWkUfRNv3xiWKipHf2Dn/a6DLOkTPkep4k0HTpsRaGdVln3KqXTpSZPEEVKzVy1EQtVZtOXozCnUq84UzKgnv0+diPh5c0eEQGkTEgN50ocYz41nz6pg4KoUcS0Nm2+eO0k4jQh4YzqM3ZVjl2W/MKU1J94/R9j7Oz60ek/hm3ej881MyZRWw8e6Xvj3Z9SDqTEsaxWtrpGCJjQatp+nM00Hny0gjYbd5GR6GjmB/hi5HzvB8JPlukXD5HUe6lfMk14coWg5R3D6etZQUXbGoMUvS2ePpXN7d6hk0GCuT64dAe9tvYik0mnEkvaix1pN1WdN9aoYGeLHv2nBUL5hmE9T5znFJWGU1qBqWjihopTLi3aX8B9r1TJqnLjGqZRnc8HukCHk1mAlXDFQpPXFvo7r5XmHrI63vnokjaivcoNPh4GA/u/WHP1+aBjOOTIJNfCFb54ZvZDVP3FaqPmVnig26b3oDyKBr8MbD6j1jaDUvH4XCQLljt64GCXg9yzs/n9cpWhbGdWG+6SwGmBuYTbL1MhbhRXcyi+nzxjUQGn4oQw7FoHg06NtuJrlAQDUsvOmkVWN27K+fasTP28AxCmIdLSyLNrjj81M4ocScgDRhWsqcFIruktVlQIwPzy9qkMUjmU0GuouVbx82jzrc1ENFucW/Al69dbZbMB286J22st477Y7fyOn+0Pmf/P7yXU2xCBwWLDzUi34ztWqNbPQxdKkdJ7PRjWJezPuhNZUcAP18SppLH2idh9G8WD5fJ0DN0ydcekkhn3fS6OMK6va\",\"text\": \"\"}]},\"finishReason\": \"STOP\"}],\"usageMetadata\": {\"promptTokenCount\": 127,\"candidatesTokenCount\": 64,\"totalTokenCount\": 311,\"thoughtsTokenCount\": 120},\"modelVersion\": \"gemini-3.8-flash-n\",\"responseId\": \"-xkFa6DiMa7skdUPq-PHkQ8\"},\"traceId\": \"e4f6205c114a3810\",\"metadata\": {}}\r\n\r\n",
+    "response_parts_analysis": [
+      {
+        "keys": [
+          "text"
+        ],
+        "thought": false,
+        "text_len": 102
+      },
+      {
+        "keys": [
+          "text"
+        ],
+        "thought": false,
+        "text_len": 63
+      },
+      {
+        "keys": [
+          "text"
+        ],
+        "thought": false,
+        "text_len": 31
+      },
+      {
+        "keys": [
+          "thoughtSignature",
+          "text"
+        ],
+        "thought": false,
+        "text_len": 0
+      }
+    ]
+  }
+}
